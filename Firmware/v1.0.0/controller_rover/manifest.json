@@ -1,0 +1,16 @@
+{
+  "name": "DragonFlySpirit C3",
+  "version": "1.0.0",
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "controller_rover_v1.0.0.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
+
