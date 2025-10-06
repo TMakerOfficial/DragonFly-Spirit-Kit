@@ -152,11 +152,21 @@
   <esp-web-install-button id="installBtn" manifest="Firmware/v1.0.0/rover/manifest.json"></esp-web-install-button>
 
   <!-- ปุ่มดาวน์โหลด -->
-  <div style="margin-top:2rem;">
+  <div class="download-section">
     <a href="DragonFly_Spirit_By_Tmaker.pdf" class="download-btn" download>📄 Download User Manual</a>
     <a href="AirplaneCode.ino" class="download-btn" download>🛩️ Download Arduino Airplane Code</a>
     <a href="RoverCode.ino" class="download-btn" download>🚜 Download Arduino Rover Code</a>
   </div>
+
+  <style>
+    .download-section {
+      display: flex;
+      flex-direction: column; /* เรียงแนวตั้ง */
+      align-items: center;    /* จัดให้อยู่ตรงกลางแนวนอน */
+      gap: 1rem;              /* ระยะห่างระหว่างปุ่ม */
+      margin-top: 2rem;
+    }
+  </style>
 
   <footer>
     Developed by T Maker
