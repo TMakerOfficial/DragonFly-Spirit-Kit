@@ -47,7 +47,15 @@
       margin-bottom: 3rem;
     }
 
-    esp-web-install-button::part(button) {
+    select {
+      font-size: 1.2rem;
+      padding: 0.5rem 1rem;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+    }
+
+    esp-web-install-button::part(button),
+    .download-btn {
       background: linear-gradient(90deg, #ff00de, #00fff7, #ff00de);
       background-size: 200% auto;
       color: #0f0c29;
@@ -62,9 +70,11 @@
       animation: glow-move 4s linear infinite;
       text-transform: uppercase;
       filter: drop-shadow(0 0 5px #ff00de) drop-shadow(0 0 10px #00fff7);
+      margin: 10px;
     }
 
-    esp-web-install-button::part(button):hover {
+    esp-web-install-button::part(button):hover,
+    .download-btn:hover {
       background-position: right center;
       box-shadow: 0 0 30px #00fff7, 0 0 40px #00fff7 inset;
       filter: drop-shadow(0 0 8px #00fff7) drop-shadow(0 0 15px #00fff7);
@@ -85,7 +95,6 @@
       100% { background-position: 200% center; }
     }
 
-    /* ✨ Particle FX - fixed start position & opacity */
     .particles {
       position: absolute;
       width: 100%;
@@ -109,60 +118,56 @@
     }
 
     @keyframes floatUp {
-      0% {
-        transform: translateY(110vh) translateX(0);
-        opacity: 0;
-      }
-      10% {
-        opacity: 1;
-      }
-      90% {
-        opacity: 1;
-      }
-      100% {
-        transform: translateY(-10vh) translateX(30px);
-        opacity: 0;
-      }
+      0% { transform: translateY(110vh); opacity: 0; }
+      10%,90% { opacity: 1; }
+      100% { transform: translateY(-10vh); opacity: 0; }
     }
   </style>
 </head>
 
 <body>
-  <div class="particles">
-    <script>
-      for (let i = 0; i < 30; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = `${Math.random() * 100}%`;
-        p.style.animationDelay = `${Math.random() * 10}s`;
-        p.style.animationDuration = `${6 + Math.random() * 6}s`;
-        document.querySelector('.particles').appendChild(p);
-      }
-    </script>
-  </div>
+  <div class="particles"></div>
+
+  <script>
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.animationDelay = `${Math.random() * 10}s`;
+      p.style.animationDuration = `${6 + Math.random() * 6}s`;
+      document.querySelector('.particles').appendChild(p);
+    }
+  </script>
 
   <h1>DragonFlySpirit Flasher</h1>
   <h2>Firmware Flasher DragonFly Spirit Kit</h2>
-    <select id="versionSelect" style="font-size:1.2rem; padding:0.5rem 1rem; margin-bottom:2rem; border-radius:8px;">
-      <option value="Firmware/v1.0.0/rover/manifest.json">Rover Robot v1.0.0</option>
-      <option value="Firmware/v1.0.0/airplane/manifest.json">Airplane RC v1.0.0</option>
-      <option value="Firmware/v1.0.0/controller_rover/manifest.json">Controller Rover Robot v1.0.0</option>
-      <option value="Firmware/v1.0.0/controller_airplane/manifest.json">Controller Airplane RC v1.0.0</option>
-    </select>
 
-    <esp-web-install-button id="installBtn" manifest="Firmware/v1.0.0/rover/manifest.json"></esp-web-install-button>
+  <select id="versionSelect">
+    <option value="Firmware/v1.0.0/rover/manifest.json">Rover Robot v1.0.0</option>
+    <option value="Firmware/v1.0.0/airplane/manifest.json">Airplane RC v1.0.0</option>
+    <option value="Firmware/v1.0.0/controller_rover/manifest.json">Controller Rover Robot v1.0.0</option>
+    <option value="Firmware/v1.0.0/controller_airplane/manifest.json">Controller Airplane RC v1.0.0</option>
+  </select>
 
-    <script>
-      const select = document.getElementById('versionSelect');
-      const installBtn = document.getElementById('installBtn');
+  <esp-web-install-button id="installBtn" manifest="Firmware/v1.0.0/rover/manifest.json"></esp-web-install-button>
 
-      select.addEventListener('change', () => {
-        installBtn.setAttribute('manifest', select.value);
-      });
-    </script>
+  <!-- ปุ่มดาวน์โหลด -->
+  <div style="margin-top:2rem;">
+    <a href="DragonFly_Spirit_By_Tmaker.pdf" class="download-btn" download>📄 Download User Manual</a>
+    <a href="AirplaneCode.ino" class="download-btn" download>🛩️ Download Arduino Airplane Code</a>
+    <a href="RoverCode.ino" class="download-btn" download>🚜 Download Arduino Rover Code</a>
+  </div>
 
   <footer>
     Developed by T Maker
   </footer>
+
+  <script>
+    const select = document.getElementById('versionSelect');
+    const installBtn = document.getElementById('installBtn');
+    select.addEventListener('change', () => {
+      installBtn.setAttribute('manifest', select.value);
+    });
+  </script>
 </body>
 </html>
