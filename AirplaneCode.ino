@@ -28,7 +28,6 @@ Madgwick MadgwickFilter;
 unsigned long lastInnerTime = 0;
 unsigned long lastOuterTime = 0;
 unsigned long lastBaroTime  = 0;
-unsigned long lastDNSTime = 0;
 
 const float innerHz = 400.0;    // Inner loop rate (Madgwick + inner PID)
 const float outerHz = 100.0;    // Outer loop rate (angle PID / altitude)
@@ -52,14 +51,14 @@ float max_altitude = 0.0;
 float min_altitude = 0.0;
 float g = 9.80665; // m/s^2
 
-int baseSpeed = 480;
+int baseSpeed = 200;
 int integralLimit = 10;
-float range_altitude = 15;
-float maxRateChange = 1; // m/s
-float kff_roll = 0.5; // FeedForward Roll
-float kff_pitch = 0.5; // FeedForward Pitch
-float kff_yaw = 0.5; // FeedForward Yaw
-float kff_altitude = 0.9; // FeedForward Altitude 
+float range_altitude = 5;
+float maxRateChange = 0.5; // m/s
+float kff_roll = 0.1; // FeedForward Roll
+float kff_pitch = 0.1; // FeedForward Pitch
+float kff_yaw = 0.1; // FeedForward Yaw
+float kff_altitude = 0.1; // FeedForward Altitude 
 
 float altitude = 0;
 float velocityZ = 0;
@@ -86,36 +85,36 @@ PID_t pidRoll_rate, pidPitch_rate, pidYaw_rate, pidAltitude_rate, pidRoll_angle,
 float trimRoll, trimPitch, trimYaw, trimAltitude;
 
 // Outer loop PID (deg and m control)
-float rollKp_angle = 10.0 ,rollKi_angle = 0.0 ,rollKd_angle = 0.0;  
+float rollKp_angle = 0.0 ,rollKi_angle = 0.0 ,rollKd_angle = 0.0;  
 float rollError_angle, rollPrevError_angle = 0, rollIntegral_angle = 0;
 float rollOutput_angle; 
 
-float pitchKp_angle = 9.0 ,pitchKi_angle = 0.5 ,pitchKd_angle = 0.0; 
+float pitchKp_angle = 0.0 ,pitchKi_angle = 0.0 ,pitchKd_angle = 0.0; 
 float pitchError_angle, pitchPrevError_angle = 0, pitchIntegral_angle = 0;
 float pitchOutput_angle;
 
-float yawKp_angle = 4.0 ,yawKi_angle = 0.0 ,yawKd_angle = 0.0; 
+float yawKp_angle = 0.0 ,yawKi_angle = 0.0 ,yawKd_angle = 0.0; 
 float yawError_angle, yawPrevError_angle = 0, yawIntegral_angle = 0;
 float yawOutput_angle;
 
-float altitudeKp_m = 1.0 ,altitudeKi_m = 0.0 ,altitudeKd_m = 0.4;
+float altitudeKp_m = 0.0 ,altitudeKi_m = 0.0 ,altitudeKd_m = 0.0;
 float altitudeError_m, altitudePrevError_m = 0, altitudeIntegral_m = 0;
 float altitudeOutput_m;
 
 // Inner loop PID (rate control ==> deg/s and m/s)
-float rollKp_rate = 1.2 ,rollKi_rate = 0.0 ,rollKd_rate = 0.03; 
+float rollKp_rate = 0.0 ,rollKi_rate = 0.0 ,rollKd_rate = 0.0; 
 float rollError_rate, rollPrevError_rate = 0, rollIntegral_rate = 0;
 float rollOutput_rate; 
 
-float pitchKp_rate = 1.2 ,pitchKi_rate = 0.0 ,pitchKd_rate = 0.04; 
+float pitchKp_rate = 0.0 ,pitchKi_rate = 0.0 ,pitchKd_rate = 0.0; 
 float pitchError_rate, pitchPrevError_rate = 0, pitchIntegral_rate = 0;
 float pitchOutput_rate;
 
-float yawKp_rate = 3.0 ,yawKi_rate = 0.0 ,yawKd_rate = 0.03; 
+float yawKp_rate = 0.0 ,yawKi_rate = 0.0 ,yawKd_rate = 0.0; 
 float yawError_rate, yawPrevError_rate = 0, yawIntegral_rate = 0;
 float yawOutput_rate;
 
-float altitudeKp_rate = 45.0 ,altitudeKi_rate = 0.00 ,altitudeKd_rate = 1.5;
+float altitudeKp_rate = 0.0 ,altitudeKi_rate = 0.0 ,altitudeKd_rate = 0.0;
 float altitudeError_rate, altitudePrevError_rate = 0, altitudeIntegral_rate = 0;
 float altitudeOutput_rate;
 
@@ -150,19 +149,6 @@ float alphaMag  = 0.9f;
 float alphaAlt  = 0.5f;
 float alphaVZ  = 0.6f; 
 
-
-// Median filter 
-float gyroX_buf[9] = {0}, gyroY_buf[9] = {0}, gyroZ_buf[9] = {0};
-float accX_buf[9]  = {0}, accY_buf[9]  = {0}, accZ_buf[9]  = {0};
-float magX_buf[3]  = {0}, magY_buf[3]  = {0}, magZ_buf[3]  = {0};
-float alt_buf[7]  = {0};
-float vz_buf[5]  = {0};
-size_t gyroX_idx = 0, gyroY_idx = 0, gyroZ_idx = 0;
-size_t accX_idx  = 0, accY_idx  = 0, accZ_idx  = 0;
-size_t magX_idx  = 0, magY_idx  = 0, magZ_idx  = 0;
-size_t alt_idx  = 0;
-size_t vz_idx  = 0;
-
 // State
 bool swlPressed = false;
 bool swrPressed = false;
@@ -194,7 +180,7 @@ typedef struct JoyData {
 JoyData incomingJoystickData;
 uint8_t lastWebCommand = 255;
 
-// *************************************************************  Functions  ************************************************************* //
+// *************************************************************  Functions  *************************************************************
 
 void readJoystickData(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
   if (len == sizeof(incomingJoystickData)) {
@@ -228,35 +214,11 @@ float angleError(float target, float current) {
     return error;
 }
 
-// ---------------- Median Filter ----------------
-template <size_t N>
-float medianFilter(float input, float (&buffer)[N], size_t &index) {
-  buffer[index] = input;
-  index = (index + 1) % N;
-
-  float temp[N];
-  memcpy(temp, buffer, sizeof(temp));
-
-  // sort ค่า
-  for (size_t i = 0; i < N - 1; i++) {
-    for (size_t j = i + 1; j < N; j++) {
-      if (temp[j] < temp[i]) {
-        float t = temp[i];
-        temp[i] = temp[j];
-        temp[j] = t;
-      }
-    }
-  }
-  return temp[N / 2];
-}
-
-// ---------------- EMA Filter ----------------
 float emaFilter(float input, float &emaPrev, float alpha) {
   emaPrev = alpha * input + (1.0f - alpha) * emaPrev;
   return emaPrev;
 }
 
-// ====== Complementary filter =====
 void Complementary_Alt_Vz(float accZ, float altitudeBaro, float dt) {
     // integrate acceleration
     velocityZ += accZ * dt;
@@ -288,29 +250,16 @@ void updateSensorsAndMadgwick(float dt) {
   float magY = magValue.y - my_bias;
   float magZ = magValue.z - mz_bias; 
 
-  // ----------- Median filter -------------
-  float gyroX_med = medianFilter(gyroX, gyroX_buf, gyroX_idx);
-  float gyroY_med = medianFilter(gyroY, gyroY_buf, gyroY_idx);
-  float gyroZ_med = medianFilter(gyroZ, gyroZ_buf, gyroZ_idx);
-  float accX_med  = medianFilter(accX,  accX_buf,  accX_idx);
-  float accY_med  = medianFilter(accY,  accY_buf,  accY_idx);
-  float accZ_med  = medianFilter(accZ,  accZ_buf,  accZ_idx);
-  float magX_med  = medianFilter(magX,  magX_buf,  magX_idx);
-  float magY_med  = medianFilter(magY,  magY_buf,  magY_idx);
-  float magZ_med  = medianFilter(magZ,  magZ_buf,  magZ_idx);
-  float alt_med  = medianFilter(baroAltitude,  alt_buf,  alt_idx);
-
   // ----------- EMA filter ------------------
-  gyroX_filtered = emaFilter(gyroX_med, emaGyroX, alphaGyro); 
-  gyroY_filtered = emaFilter(gyroY_med, emaGyroY, alphaGyro);
-  gyroZ_filtered = emaFilter(gyroZ_med, emaGyroZ, alphaGyro);
-  accX_filtered  = emaFilter(accX_med,  emaAccX,  alphaAcc);
-  accY_filtered  = emaFilter(accY_med,  emaAccY,  alphaAcc);
-  accZ_filtered  = emaFilter(accZ_med,  emaAccZ,  alphaAcc);
-  magX_filtered  = emaFilter(magX_med,  emaMagX,  alphaMag);
-  magY_filtered  = emaFilter(magY_med,  emaMagY,  alphaMag);
-  magZ_filtered  = emaFilter(magZ_med,  emaMagZ,  alphaMag);
-  alt_filtered  = emaFilter(alt_med,  emaAlt,  alphaAlt);
+  gyroX_filtered = emaFilter(gyroX, emaGyroX, alphaGyro); 
+  gyroY_filtered = emaFilter(gyroY, emaGyroY, alphaGyro);
+  gyroZ_filtered = emaFilter(gyroZ, emaGyroZ, alphaGyro);
+  accX_filtered  = emaFilter(accX,  emaAccX,  alphaAcc);
+  accY_filtered  = emaFilter(accY,  emaAccY,  alphaAcc);
+  accZ_filtered  = emaFilter(accZ,  emaAccZ,  alphaAcc);
+  magX_filtered  = emaFilter(magX,  emaMagX,  alphaMag);
+  magY_filtered  = emaFilter(magY,  emaMagY,  alphaMag);
+  magZ_filtered  = emaFilter(magZ,  emaMagZ,  alphaMag);
 
   float checkMag = magValue.x + magValue.y + magValue.z;
 
@@ -350,19 +299,18 @@ void updateSensorsAndMadgwick(float dt) {
   Complementary_Alt_Vz(accZ_true, baroAltitude, innerDt);
   
   currentAltitude = altitude;
-  velocityZ  = medianFilter(velocityZ,  vz_buf,  vz_idx);
   velocityZ  = emaFilter(velocityZ,  emaVZ,  alphaVZ);
 }
 
 void updateParameters(float dt) {
-  targetRoll  = constrain(incomingJoystickData.XR + trimRoll, -30, 30); // deg
-  targetPitch = constrain(incomingJoystickData.YR + trimPitch, -30, 30); // deg
-  targetYaw   = constrain(incomingJoystickData.XL + trimYaw, -90, 90); // deg/s
+  targetRoll  = incomingJoystickData.XR + trimRoll; // deg
+  targetPitch = incomingJoystickData.YR + trimPitch; // deg
+  targetYaw   = incomingJoystickData.XL + trimYaw; // deg/s
   // --- Yaw control ---
   yaw_rate_target = targetYaw;
   yaw_setpoint += yaw_rate_target * dt;
 
-  float rawAltitudeRate = constrain(incomingJoystickData.YL * 0.01, -5, 5); // m/s
+  float rawAltitudeRate = incomingJoystickData.YL * 0.01; // m/s
 
   // Update altitude setpoint 
   altitude_setpoint += rawAltitudeRate * dt;
@@ -468,6 +416,11 @@ void driveMotors() {
   m2 = constrain(m2, 0, 1023);
   m3 = constrain(m3, 0, 1023);
   m4 = constrain(m4, 0, 1023);
+
+  ledcWrite(MA, (int)m1);
+  ledcWrite(MB, (int)m2);
+  ledcWrite(MC, (int)m3);
+  ledcWrite(MD, (int)m4);
 }
 
 void FlightController() {
