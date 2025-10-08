@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <esp_now.h>
+#include "esp_wifi.h"
 
 // ==== PIN Definitions ====
 #define XL_PIN 3 //3 34
@@ -26,10 +27,10 @@ struct JoyData {
 };
 
 void readJoystick() {
-  XL = readAverage(XL_PIN);
-  YL = readAverage(YL_PIN);
-  XR = readAverage(XR_PIN);
-  YR = readAverage(YR_PIN);
+  XL = analogRead(XL_PIN);
+  YL = analogRead(YL_PIN);
+  XR = analogRead(XR_PIN);
+  YR = analogRead(YR_PIN);
   SWL = !digitalRead(SWL_PIN);
   SWR = !digitalRead(SWR_PIN);
 }
@@ -63,14 +64,6 @@ void setupESPNow() {
     return;
   }
 
-  prefs.begin("config", true);
-  String macStr = prefs.getString("ReceiverMAC", "00:00:00:00:00:00");
-  prefs.end();
-
-  sscanf(macStr.c_str(), "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", 
-         &ReceiverMAC[0], &ReceiverMAC[1], &ReceiverMAC[2],
-         &ReceiverMAC[3], &ReceiverMAC[4], &ReceiverMAC[5]);
-
   esp_now_register_send_cb(OnSent);
 
   esp_now_peer_info_t peerInfo = {};
@@ -83,7 +76,7 @@ void setupESPNow() {
   }
 
   Serial.print("📡 Receiver MAC Set: ");
-  Serial.println(macStr);
+  Serial.println(ReceiverMAC[6]);
 }
 
 void setup() {
