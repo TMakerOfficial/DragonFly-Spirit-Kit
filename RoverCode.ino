@@ -63,20 +63,6 @@ void setupESPNow() {
   }
 }
 
-void Arm() {
-  ledcWrite(MA, 100);
-  ledcWrite(MB, 100);
-  ledcWrite(MC, 100);
-  ledcWrite(MD, 100);
-}
-
-void Disarm() {
-  ledcWrite(MA, 0);
-  ledcWrite(MB, 0);
-  ledcWrite(MC, 0);
-  ledcWrite(MD, 0);
-}
-
 // =================== Motor output ===================
 void driveMotors() {
   if (incomingJoystickData.YR > 5) {
